@@ -1,0 +1,70 @@
+.actions-log {
+  grid-area: actions;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 0 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.actions-log-title {
+  font-family: "Bree Serif", serif;
+  font-size: 18px;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.actions-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.action-content {
+  flex: 1;
+  padding-bottom: 8px;
+}
+
+.action-description {
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  color: #334155;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.action-timestamp {
+  font-family: Roboto, sans-serif;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.action-connector {
+  position: absolute;
+  left: 16px;
+  top: 32px;
+  width: 2px;
+  height: calc(100% - 32px);
+  background-color: #e2e8f0;
+}

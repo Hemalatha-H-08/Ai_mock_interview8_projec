@@ -1,0 +1,168 @@
+// ============================================
+// auth.service.js - Authentication Service
+// ============================================
+// Contains the business logic for:
+//   - Email/password registration and login
+//   - Getting user profile
+// Reference: bcrypt.hash(), bcrypt.compare() - reference-backend.md
+// ============================================
+
+import bcrypt from 'bcryptjs';
+import User from '../models/User.model.js';
+import { isDatabaseConnected } from '../config/db.config.js';
+import { demoStore, createDemoId } from '../utils/demoStore.js';
+import { generateToken } from '../utils/jwt.utils.js';
+
+/**
+ * Register a new user with email and password.
+ */
+export const register = async (name, email, password) => {
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedName = name.trim();
+
+  if (!isDatabaseConnected()) {
+    const existing = demoStore.users.find((user) => user.email === normalizedEmail);
+    if (existing) {
+      const error = new Error('Email already registered.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = {
+      _id: createDemoId(),
+      email: normalizedEmail,
+      name: normalizedName,
+      password: hashedPassword,
+      picture: '',
+      createdAt: new Date(),
+      lastLogin: new Date(),
+    };
+
+    demoStore.users.push(user);
+    const token = generateToken(user);
+
+    return {
+      token,
+      user: { id: user._id, email: user.email, name: user.name },
+    };
+  }
+
+  // Check if email already exists
+  const existing = await User.findOne({ email: normalizedEmail });
+  if (existing) {
+    const error = new Error('Email already registered.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Hash the password with bcrypt (10 salt rounds)
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create the user in the database
+  const user = await User.create({ name: normalizedName, email: normalizedEmail, password: hashedPassword });
+
+  // Generate a JWT token
+  const token = generateToken(user);
+
+  return {
+    token,
+    user: { id: user._id, email: user.email, name: user.name },
+  };
+};
+
+/**
+ * Login a user with email and password.
+ */
+export const emailLogin = async (email, password) => {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  if (!isDatabaseConnected()) {
+    const user = demoStore.users.find((entry) => entry.email === normalizedEmail);
+    if (!user || !user.password) {
+      const error = new Error('Invalid email or password.');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      const error = new Error('Invalid email or password.');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    user.lastLogin = new Date();
+    const token = generateToken(user);
+
+    return {
+      token,
+      user: { id: user._id, email: user.email, name: user.name },
+    };
+  }
+
+  // Find user by email
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user || !user.password) {
+    const error = new Error('Invalid email or password.');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // Compare the provided password with the stored hash
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    const error = new Error('Invalid email or password.');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // Update last login time
+  user.lastLogin = new Date();
+  await user.save();
+
+  // Generate a JWT token
+  const token = generateToken(user);
+
+  return {
+    token,
+    user: { id: user._id, email: user.email, name: user.name },
+  };
+};
+
+/**
+ * Get a user's profile by their ID.
+ */
+export const getUserProfile = async (userId) => {
+  if (!isDatabaseConnected()) {
+    const user = demoStore.users.find((entry) => String(entry._id) === String(userId));
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin,
+    };
+  }
+
+  const user = await User.findById(userId).select('-__v -password');
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    picture: user.picture,
+    createdAt: user.createdAt,
+    lastLogin: user.lastLogin,
+  };
+};
