@@ -2,6 +2,10 @@
   "name": "ai-mock-interview-server",
   "version": "1.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hemalatha-H-08/Ai_mock_interview8_projec.git"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
